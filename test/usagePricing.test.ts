@@ -99,7 +99,7 @@ describe('usage cost estimator', () => {
     const estimate = estimateUsageCost({
       backend: 'codex',
       model: 'gpt-6-astra',
-      pricedAt: '2026-09-04T00:00:00.000Z',
+      pricedAt: '2026-09-29T00:00:00.000Z',
       usage: {
         ...baseUsage,
         inputTokens: 100_000,
@@ -109,16 +109,16 @@ describe('usage cost estimator', () => {
       },
     });
     expect(estimate.costSource).toBe('estimated');
-    expect(estimate.estimatedCostUsd).toBeCloseTo(1.1125);
+    expect(estimate.estimatedCostUsd).toBeCloseTo(2.225);
     expect(estimate.costSnapshot).toMatchObject({
       provider: 'openai',
       model: 'gpt-6-astra',
       pricingEntryId: 'openai-gpt-6-astra-standard',
       ratesPerMillion: {
-        input: 5,
-        cachedInput: 0.5,
-        cacheWrite: 6.25,
-        output: 25,
+        input: 10,
+        cachedInput: 1,
+        cacheWrite: 12.5,
+        output: 50,
       },
     });
     expect(estimate.costSnapshot?.longContextThresholdTokens).toBeUndefined();
@@ -128,7 +128,7 @@ describe('usage cost estimator', () => {
     const estimate = estimateUsageCost({
       backend: 'codex',
       model: 'gpt-6-astra',
-      pricedAt: '2026-09-04T00:00:00.000Z',
+      pricedAt: '2026-09-29T00:00:00.000Z',
       usage: {
         ...baseUsage,
         inputTokens: 100_000,
@@ -137,43 +137,11 @@ describe('usage cost estimator', () => {
       },
     });
     expect(estimate.costSource).toBe('estimated');
-    expect(estimate.estimatedCostUsd).toBeCloseTo(1.95);
+    expect(estimate.estimatedCostUsd).toBeCloseTo(3.9);
     expect(estimate.costSnapshot).toMatchObject({
       provider: 'openai',
       model: 'gpt-6-astra',
       pricingEntryId: 'openai-gpt-6-astra-standard',
-      longContextThresholdTokens: 272_000,
-      ratesPerMillion: {
-        input: 10,
-        cachedInput: 1,
-        cacheWrite: 12.5,
-        output: 37.5,
-      },
-    });
-  });
-
-  test('uses GPT-6 Astra Fast pricing when Codex Fast requests the priority tier', () => {
-    const estimate = estimateUsageCost({
-      backend: 'codex',
-      model: 'gpt-6-astra',
-      pricingTier: 'priority',
-      pricedAt: '2026-09-04T00:00:00.000Z',
-      usage: {
-        ...baseUsage,
-        inputTokens: 100_000,
-        cacheReadTokens: 200_000,
-        cacheWriteTokens: 100_000,
-        outputTokens: 10_000,
-      },
-    });
-    expect(estimate.costSource).toBe('estimated');
-    expect(estimate.estimatedCostUsd).toBeCloseTo(5.65);
-    expect(estimate.costSnapshot).toMatchObject({
-      provider: 'openai',
-      model: 'gpt-6-astra',
-      pricingTier: 'priority',
-      pricingEntryId: 'openai-gpt-6-astra-priority',
-      sourceUrl: 'https://developers.openai.com/api/docs/pricing',
       longContextThresholdTokens: 272_000,
       ratesPerMillion: {
         input: 20,
@@ -184,30 +152,139 @@ describe('usage cost estimator', () => {
     });
   });
 
+  test('uses GPT-6 Astra Fast pricing when Codex Fast requests the priority tier', () => {
+    const estimate = estimateUsageCost({
+      backend: 'codex',
+      model: 'gpt-6-astra',
+      pricingTier: 'priority',
+      pricedAt: '2026-09-29T00:00:00.000Z',
+      usage: {
+        ...baseUsage,
+        inputTokens: 100_000,
+        cacheReadTokens: 200_000,
+        cacheWriteTokens: 100_000,
+        outputTokens: 10_000,
+      },
+    });
+    expect(estimate.costSource).toBe('estimated');
+    expect(estimate.estimatedCostUsd).toBeCloseTo(11.3);
+    expect(estimate.costSnapshot).toMatchObject({
+      provider: 'openai',
+      model: 'gpt-6-astra',
+      pricingTier: 'priority',
+      pricingEntryId: 'openai-gpt-6-astra-priority',
+      sourceUrl: 'https://developers.openai.com/api/docs/pricing',
+      longContextThresholdTokens: 272_000,
+      ratesPerMillion: {
+        input: 40,
+        cachedInput: 4,
+        cacheWrite: 50,
+        output: 150,
+      },
+    });
+  });
+
+  test('estimates GPT-6.1 Sol token cost with cache writes', () => {
+    const estimate = estimateUsageCost({
+      backend: 'codex',
+      model: 'gpt-6.1-sol',
+      pricedAt: '2026-09-29T00:00:00.000Z',
+      usage: {
+        ...baseUsage,
+        inputTokens: 100_000,
+        cacheReadTokens: 100_000,
+        cacheWriteTokens: 50_000,
+        outputTokens: 10_000,
+      },
+    });
+    expect(estimate.costSource).toBe('estimated');
+    expect(estimate.estimatedCostUsd).toBeCloseTo(0.435);
+    expect(estimate.costSnapshot).toMatchObject({
+      provider: 'openai',
+      model: 'gpt-6.1-sol',
+      pricingEntryId: 'openai-gpt-6.1-sol-standard',
+      ratesPerMillion: {
+        input: 2,
+        cachedInput: 0.1,
+        cacheWrite: 2.5,
+        output: 10,
+      },
+    });
+  });
+
+  test('estimates legacy GPT-6 Sol token cost', () => {
+    const estimate = estimateUsageCost({
+      backend: 'codex',
+      model: 'gpt-6-sol',
+      pricedAt: '2026-09-29T00:00:00.000Z',
+      usage: {
+        ...baseUsage,
+        inputTokens: 100_000,
+        cacheReadTokens: 100_000,
+        cacheWriteTokens: 50_000,
+        outputTokens: 10_000,
+      },
+    });
+    expect(estimate.costSource).toBe('estimated');
+    expect(estimate.estimatedCostUsd).toBeCloseTo(0.445);
+    expect(estimate.costSnapshot?.pricingEntryId).toBe('openai-gpt-6-sol-standard');
+  });
+
+  test('uses GPT-6 Luna Fast pricing when Codex Fast requests the priority tier', () => {
+    const estimate = estimateUsageCost({
+      backend: 'codex',
+      model: 'gpt-6-luna',
+      pricingTier: 'priority',
+      pricedAt: '2026-09-29T00:00:00.000Z',
+      usage: {
+        ...baseUsage,
+        inputTokens: 100_000,
+        cacheReadTokens: 200_000,
+        cacheWriteTokens: 100_000,
+        outputTokens: 10_000,
+      },
+    });
+    expect(estimate.costSource).toBe('estimated');
+    expect(estimate.estimatedCostUsd).toBeCloseTo(0.113);
+    expect(estimate.costSnapshot).toMatchObject({
+      provider: 'openai',
+      model: 'gpt-6-luna',
+      pricingTier: 'priority',
+      pricingEntryId: 'openai-gpt-6-luna-priority',
+      longContextThresholdTokens: 272_000,
+      ratesPerMillion: {
+        input: 0.4,
+        cachedInput: 0.04,
+        cacheWrite: 0.5,
+        output: 1.5,
+      },
+    });
+  });
+
   test('estimates GPT-5.6 Sol token cost with cache writes', () => {
     const estimate = estimateUsageCost({
       backend: 'codex',
       model: 'gpt-5.6-sol',
-      pricedAt: '2026-07-10T00:00:00.000Z',
+      pricedAt: '2026-09-29T00:00:00.000Z',
       usage: {
         ...baseUsage,
-        inputTokens: 1_000_000,
-        cacheReadTokens: 2_000_000,
-        cacheWriteTokens: 1_000_000,
-        outputTokens: 500_000,
+        inputTokens: 100_000,
+        cacheReadTokens: 100_000,
+        cacheWriteTokens: 50_000,
+        outputTokens: 10_000,
       },
     });
     expect(estimate.costSource).toBe('estimated');
-    expect(estimate.estimatedCostUsd).toBeCloseTo(27.25);
+    expect(estimate.estimatedCostUsd).toBeCloseTo(0.89);
     expect(estimate.costSnapshot).toMatchObject({
       provider: 'openai',
       model: 'gpt-5.6-sol',
       pricingEntryId: 'openai-gpt-5.6-sol-standard',
       ratesPerMillion: {
-        input: 5,
-        cachedInput: 0.5,
-        cacheWrite: 6.25,
-        output: 30,
+        input: 4,
+        cachedInput: 0.4,
+        cacheWrite: 5,
+        output: 20,
       },
     });
   });
@@ -217,23 +294,49 @@ describe('usage cost estimator', () => {
       backend: 'codex',
       model: 'gpt-5.6-luna',
       pricingTier: 'priority',
-      pricedAt: '2026-07-10T00:00:00.000Z',
+      pricedAt: '2026-09-29T00:00:00.000Z',
       usage: {
         ...baseUsage,
-        inputTokens: 1_000_000,
-        cacheReadTokens: 2_000_000,
-        cacheWriteTokens: 1_000_000,
-        outputTokens: 500_000,
+        inputTokens: 100_000,
+        cacheReadTokens: 100_000,
+        cacheWriteTokens: 50_000,
+        outputTokens: 10_000,
       },
     });
     expect(estimate.costSource).toBe('estimated');
-    expect(estimate.estimatedCostUsd).toBeCloseTo(10.9);
+    expect(estimate.estimatedCostUsd).toBeCloseTo(0.093);
     expect(estimate.costSnapshot).toMatchObject({
       provider: 'openai',
       model: 'gpt-5.6-luna',
       pricingTier: 'priority',
       pricingEntryId: 'openai-gpt-5.6-luna-priority',
-      sourceUrl: 'https://developers.openai.com/api/docs/pricing',
+      sourceUrl: 'https://developers.openai.com/api/docs/models/gpt-5.6-luna',
+    });
+  });
+
+  test('estimates Daybreak Blue alias pricing from its current underlying model', () => {
+    const estimate = estimateUsageCost({
+      backend: 'codex',
+      model: 'gpt-daybreak-blue-latest',
+      pricedAt: '2026-09-29T00:00:00.000Z',
+      usage: {
+        ...baseUsage,
+        inputTokens: 100_000,
+        outputTokens: 10_000,
+      },
+    });
+    expect(estimate.costSource).toBe('estimated');
+    expect(estimate.estimatedCostUsd).toBeCloseTo(0.6);
+    expect(estimate.costSnapshot).toMatchObject({
+      provider: 'openai',
+      model: 'gpt-daybreak-blue-latest',
+      pricingEntryId: 'openai-gpt-daybreak-blue-latest-standard',
+      ratesPerMillion: {
+        input: 4,
+        cachedInput: 0.4,
+        cacheWrite: 5,
+        output: 20,
+      },
     });
   });
 
@@ -279,6 +382,17 @@ describe('usage cost estimator', () => {
     expect(estimate.costSnapshot?.pricingEntryId).toBe('anthropic-claude-opus-5-family');
   });
 
+  test('uses Opus 5.5 pricing before the broader Opus 5 glob', () => {
+    const estimate = estimateUsageCost({
+      backend: 'claude-code',
+      model: 'claude-opus-5-5[1m]',
+      usage: { ...baseUsage, inputTokens: 1_000_000, cacheReadTokens: 1_000_000, cacheWriteTokens: 1_000_000, outputTokens: 1_000_000 },
+    });
+    expect(estimate.costSource).toBe('estimated');
+    expect(estimate.estimatedCostUsd).toBeCloseTo(29.2);
+    expect(estimate.costSnapshot?.pricingEntryId).toBe('anthropic-claude-opus-5.5-family');
+  });
+
   test('uses introductory Sonnet 5 pricing', () => {
     const estimate = estimateUsageCost({
       backend: 'claude-code',
@@ -297,6 +411,17 @@ describe('usage cost estimator', () => {
         output: 10,
       },
     });
+  });
+
+  test('uses Sonnet 5.5 pricing before the broader Sonnet 5 glob', () => {
+    const estimate = estimateUsageCost({
+      backend: 'claude-code',
+      model: 'claude-sonnet-5-5',
+      usage: { ...baseUsage, inputTokens: 1_000_000, cacheReadTokens: 1_000_000, cacheWriteTokens: 1_000_000, outputTokens: 1_000_000 },
+    });
+    expect(estimate.costSource).toBe('estimated');
+    expect(estimate.estimatedCostUsd).toBeCloseTo(14.7);
+    expect(estimate.costSnapshot?.pricingEntryId).toBe('anthropic-claude-sonnet-5.5-family');
   });
 
   test('uses Opus 5 pricing for Bedrock inference profile ids', () => {
@@ -320,6 +445,17 @@ describe('usage cost estimator', () => {
     expect(estimate.costSource).toBe('estimated');
     expect(estimate.estimatedCostUsd).toBeCloseTo(60);
     expect(estimate.costSnapshot?.pricingEntryId).toBe('anthropic-claude-fable-5-family');
+  });
+
+  test('uses Fable 5.1 pricing before the broader Fable 5 glob', () => {
+    const estimate = estimateUsageCost({
+      backend: 'claude-code',
+      model: 'claude-fable-5-1',
+      usage: { ...baseUsage, inputTokens: 1_000_000, cacheReadTokens: 1_000_000, cacheWriteTokens: 1_000_000, outputTokens: 1_000_000 },
+    });
+    expect(estimate.costSource).toBe('estimated');
+    expect(estimate.estimatedCostUsd).toBeCloseTo(72.75);
+    expect(estimate.costSnapshot?.pricingEntryId).toBe('anthropic-claude-fable-5.1-family');
   });
 
   test('uses Fable 5 pricing for Bedrock inference profile ids', () => {

@@ -983,21 +983,27 @@ Because every current backend advertises `activeTurnResume: 'unsupported'`, star
 
 | `id` | `label` | `family` | `costTier` | `default` |
 |---|---|---|---|---|
+| `claude-opus-5-5[1m]` | Opus 5.5 (1M context) | opus | high | — |
 | `claude-opus-5[1m]` | Opus 5 (1M context) | opus | high | — |
+| `claude-fable-5-1` | Fable 5.1 | fable | high | — |
 | `claude-fable-5` | Fable 5 | fable | high | — |
 | `claude-opus-4-8` | Opus 4.8 | opus | high | — |
 | `claude-opus-4-7` | Opus 4.7 | opus | high | — |
 | `claude-opus-4-6` | Opus 4.6 | opus | high | — |
-| `claude-sonnet-5` | Sonnet 5 | sonnet | medium | ✓ |
+| `claude-sonnet-5-5` | Sonnet 5.5 | sonnet | medium | ✓ |
+| `claude-sonnet-5` | Sonnet 5 | sonnet | medium | — |
 | `claude-sonnet-4-6` | Sonnet 4.6 | sonnet | medium | — |
 | `claude-haiku-4-5` | Haiku 4.5 | haiku | low | — |
 
 Adaptive reasoning effort support (`supportedEffortLevels`):
+- `claude-opus-5-5[1m]`: `['low', 'medium', 'high', 'xhigh', 'max']`
 - `claude-opus-5[1m]`: `['low', 'medium', 'high', 'xhigh', 'max']`
+- `claude-fable-5-1`: `['low', 'medium', 'high', 'xhigh', 'max']`
 - `claude-fable-5`: `['low', 'medium', 'high', 'xhigh', 'max']`
 - `claude-opus-4-8`: `['low', 'medium', 'high', 'xhigh', 'max']`
 - `claude-opus-4-7`: `['low', 'medium', 'high', 'xhigh', 'max']`
 - `claude-opus-4-6`: `['low', 'medium', 'high', 'max']`
+- `claude-sonnet-5-5`: `['low', 'medium', 'high', 'xhigh', 'max']`
 - `claude-sonnet-5`: `['low', 'medium', 'high', 'xhigh', 'max']`
 - `claude-sonnet-4-6`: `['low', 'medium', 'high']`
 - `claude-haiku-4-5`: field omitted (no effort support)
@@ -1018,7 +1024,7 @@ Adaptive reasoning effort support (`supportedEffortLevels`):
   --permission-mode bypassPermissions \
   --output-format stream-json \
   --verbose \
-  [--model <id>]                     # if model specified (e.g. claude-opus-5[1m], claude-fable-5, claude-sonnet-5)
+  [--model <id>]                     # if model specified (e.g. claude-opus-5-5[1m], claude-fable-5-1, claude-sonnet-5-5)
   [--effort <level>]                # if effort specified AND model supports that level
   [--settings '{"ultracode":true}']  # if claudeCodeMode is ultracode AND model supports xhigh
   [--session-id <uuid>]              # if isNewSession
@@ -1737,18 +1743,20 @@ Fast Mode/priority-processing entries carry `pricingTier: "priority"` and are
 selected only when the usage context requests that tier, currently from Codex
 Fast conversations. Agent Cockpit continues to persist the tier as `priority`
 because historical Codex Fast usage ledgers and calculators already use that
-value. The September 2026 OpenAI entries include exact standard and Fast token
-rate rows for `gpt-6-astra`, including cache-write rates and the published
-272,000-token long-context threshold. When a token pricing entry defines
-long-context pricing, the OpenAI/Codex calculator compares fresh input + cache
-read + cache write tokens to the threshold and applies the long-context rates to
-the full estimated request when that prompt input total is greater than the
-threshold; otherwise it applies the short-context rates. The July 2026 OpenAI
-entries still include exact standard and priority token-rate rows for
-`gpt-5.6-sol`, `gpt-5.6-terra`, and `gpt-5.6-luna`, including their
-cache-write rates. `gpt-5.3-codex-spark` remains unpriced in the dollar catalog
-because the local Codex CLI marks it as not supported in the API and OpenAI
-identifies it as a research preview. See
+value. The September 29, 2026 OpenAI entries include exact standard and Fast
+token-rate rows for `gpt-6-astra`, `gpt-6.1-sol`, `gpt-6-sol`,
+`gpt-6-luna`, `gpt-5.6-sol`, `gpt-5.6-terra`, and `gpt-5.6-luna`, including
+cache-write rates and the published 272,000-token long-context threshold.
+`gpt-daybreak-blue-latest` is priced as its current `gpt-5.6-sol` underlying
+alias and does not carry a Fast/priority row because the local Codex catalog
+does not advertise a Fast service tier for that alias. When a token pricing
+entry defines long-context pricing, the OpenAI/Codex calculator compares fresh
+input + cache read + cache write tokens to the threshold and applies the
+long-context rates to the full estimated request when that prompt input total
+is greater than the threshold; otherwise it applies the short-context rates.
+`gpt-5.3-codex-spark` remains unpriced in the dollar catalog because the local
+Codex CLI marks it as not supported in the API and OpenAI identifies it as a
+research preview. See
 [ADR-0091](adr/0091-support-long-context-usage-pricing.md) for the
 long-context pricing shape.
 The Anthropic entries include Claude Opus 5 at $5 input, $0.50 cache read,
@@ -1758,7 +1766,14 @@ five-minute cache write, and $10 output per million tokens through August 31,
 2026. Anthropic's published standard Sonnet 5 rates become $3/$0.30/$3.75/$15
 on September 1, 2026; because the built-in catalog is release-owned rather than
 time-scheduled, a release on or after that date must refresh this entry before
-shipping. Claude effort and Ultracode selections do not change per-token rates;
+shipping. The catalog also prices Claude Opus 5.5 ($4 input, $0.20 cache read,
+$5 five-minute cache write, $20 output), Claude Sonnet 5.5 ($2 input, $0.20
+cache read, $2.50 five-minute cache write, $10 output), and Claude Fable 5.1
+($10 input, $0.25 cache read, $12.50 five-minute cache write, $50 output). Their
+`*claude-opus-5-5*`, `*claude-sonnet-5-5*`, and `*claude-fable-5-1*` entries are
+ordered ahead of the broader `*claude-opus-5*`, `*claude-sonnet-5*`, and
+`*claude-fable-5*` globs so `findPricingEntry` (first match wins) resolves the
+newer models to their own rates. Claude effort and Ultracode selections do not change per-token rates;
 they affect estimates through the actual input/output/cache token counts
 reported by Claude Code.
 Mutable user overrides live under
