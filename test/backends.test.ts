@@ -190,7 +190,14 @@ describe('ClaudeCodeAdapter', () => {
     const meta = adapter.metadata;
     expect(meta.models).toBeDefined();
     expect(Array.isArray(meta.models)).toBe(true);
-    expect(meta.models!.length).toBe(8);
+    expect(meta.models!.length).toBe(11);
+
+    const opus55 = meta.models!.find(m => m.id === 'claude-opus-5-5[1m]');
+    expect(opus55).toBeDefined();
+    expect(opus55!.label).toBe('Opus 5.5 (1M context)');
+    expect(opus55!.family).toBe('opus');
+    expect(opus55!.costTier).toBe('high');
+    expect(opus55!.capabilities?.input?.image).toBe(true);
 
     const opus5 = meta.models!.find(m => m.id === 'claude-opus-5[1m]');
     expect(opus5).toBeDefined();
@@ -198,6 +205,13 @@ describe('ClaudeCodeAdapter', () => {
     expect(opus5!.family).toBe('opus');
     expect(opus5!.costTier).toBe('high');
     expect(opus5!.capabilities?.input?.image).toBe(true);
+
+    const fable51 = meta.models!.find(m => m.id === 'claude-fable-5-1');
+    expect(fable51).toBeDefined();
+    expect(fable51!.label).toBe('Fable 5.1');
+    expect(fable51!.family).toBe('fable');
+    expect(fable51!.costTier).toBe('high');
+    expect(fable51!.capabilities?.input?.image).toBe(true);
 
     const fable = meta.models!.find(m => m.id === 'claude-fable-5');
     expect(fable).toBeDefined();
@@ -226,9 +240,15 @@ describe('ClaudeCodeAdapter', () => {
     expect(opus46!.family).toBe('opus');
     expect(opus46!.costTier).toBe('high');
 
+    const sonnet55 = meta.models!.find(m => m.id === 'claude-sonnet-5-5');
+    expect(sonnet55).toBeDefined();
+    expect(sonnet55!.default).toBe(true);
+    expect(sonnet55!.costTier).toBe('medium');
+    expect(sonnet55!.capabilities?.input?.image).toBe(true);
+
     const sonnet5 = meta.models!.find(m => m.id === 'claude-sonnet-5');
     expect(sonnet5).toBeDefined();
-    expect(sonnet5!.default).toBe(true);
+    expect(sonnet5!.default).toBeUndefined();
     expect(sonnet5!.costTier).toBe('medium');
     expect(sonnet5!.capabilities?.input?.image).toBe(true);
 
@@ -247,8 +267,14 @@ describe('ClaudeCodeAdapter', () => {
     const adapter = new ClaudeCodeAdapter({ workingDir: '/tmp' });
     const meta = adapter.metadata;
 
+    const opus55 = meta.models!.find(m => m.id === 'claude-opus-5-5[1m]');
+    expect(opus55!.supportedEffortLevels).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
+
     const opus5 = meta.models!.find(m => m.id === 'claude-opus-5[1m]');
     expect(opus5!.supportedEffortLevels).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
+
+    const fable51 = meta.models!.find(m => m.id === 'claude-fable-5-1');
+    expect(fable51!.supportedEffortLevels).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
 
     const fable = meta.models!.find(m => m.id === 'claude-fable-5');
     expect(fable!.supportedEffortLevels).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
@@ -263,6 +289,9 @@ describe('ClaudeCodeAdapter', () => {
     // Opus 4.6 supports low/medium/high/max (no xhigh)
     const opus46 = meta.models!.find(m => m.id === 'claude-opus-4-6');
     expect(opus46!.supportedEffortLevels).toEqual(['low', 'medium', 'high', 'max']);
+
+    const sonnet55 = meta.models!.find(m => m.id === 'claude-sonnet-5-5');
+    expect(sonnet55!.supportedEffortLevels).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
 
     const sonnet5 = meta.models!.find(m => m.id === 'claude-sonnet-5');
     expect(sonnet5!.supportedEffortLevels).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
